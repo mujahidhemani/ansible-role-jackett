@@ -1,0 +1,8 @@
+---
+# handlers file for ansible-role-jackett
+
+- name: restart jackett
+  systemd: 
+    name: jackett.service
+    state: restarted
+    daemon-reload: yes

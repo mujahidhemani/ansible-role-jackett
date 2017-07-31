@@ -1,0 +1,67 @@
+---
+# tasks file for ansible-role-jackett
+
+- name: Create Jackett user
+  user:
+    name: "{{ jackett_user }}"
+    state: present
+    shell: /sbin/nologin
+    home: "{{ jackett_home }}"
+  tags:
+    - add_jacket_user
+
+- name: Create Jackett directory
+  file:
+    dest: "{{ jackett_directory }}"
+    owner: "{{ jackett_user }}"
+    group: "{{ jackett_user }}"
+    state: directory
+
+- name: Add mono repo
+  yum_repository: 
+    name: mono
+    description: Mono YUM repo
+    baseurl: "{{ mono_baseurl }}"
+    gpgkey: "{{ mono_gpgurl }}"
+    gpgcheck: yes
+
+- name: Install yum prerequisites
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ jackett_prereqs }}"
+
+- name: Get Latest Version
+  shell: "wget -qO- 'https://github.com/Jackett/Jackett/releases/latest' | grep -o 'tag/[v.0-9]*' | awk -F/ '{print $2}' | head -n1"
+  register: jackett_version
+
+- name: Extract Jackett
+  unarchive:
+    src: "https://github.com/Jackett/Jackett/releases/download/{{ jackett_version.stdout }}/Jackett.Binaries.Mono.tar.gz"
+    dest: "{{ jackett_directory }}"
+    owner: "{{ jackett_user }}"
+    group: "{{ jackett_user }}"
+    remote_src: true
+    extra_opts: "--strip-components=1"
+
+- name: Update file permissions
+  file:
+    path: "{{ jackett_directory }}"
+    owner: "{{ jackett_user }}"
+    group: "{{ jackett_user }}"
+    recurse: yes
+
+- name: Copy service unit template
+  template:
+    src: jackett.service.j2
+    dest: /etc/systemd/system/jackett.service
+    mode: 0644
+  notify:
+    - restart jackett
+
+- name: Set to start on boot
+  systemd:
+    name: jackett.service
+    enabled: yes
+    daemon_reload: yes
+    state: started

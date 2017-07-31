@@ -1,0 +1,6 @@
+---
+# defaults file for ansible-role-jackett
+
+jackett_directory: /opt/jackett/
+jackett_user: jackett
+jackett_home: /home/{{ jackett_user }}
