@@ -5,8 +5,10 @@ After=network.target
 [Service]
 User={{ jackett_user }}
 Type=simple
-ExecStart=/usr/bin/mono --debug {{ jackett_directory }}JackettConsole.exe
-TimeoutStopSec=20
+ExecStart=/usr/bin/mono --debug {{ jackett_directory }}JackettConsole.exe --NoRestart
+Restart=always
+RestartSec=2
+TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target
